@@ -2,62 +2,71 @@
 
 ## 🚀 Enhanced with Local AI-Powered Insights and Interactive Dashboards
 
-A comprehensive healthcare data quality analytics platform that combines advanced data validation, local AI-powered natural language processing, and interactive visualizations to help healthcare organizations maintain high-quality provider credentialing data.
+A comprehensive healthcare data quality analytics platform that combines advanced data validation, local AI-powered natural language processing, and interactive visualizations to help healthcare organizations monitor provider credentialing compliance, identify data quality issues, and drive continuous improvements.
 
 ## 🎯 Key Benefits
 
-- **🔐 No API Keys Required**: No OpenAI or other external API dependencies
-- **🏠 Fully Local**: AI models run entirely on your machine
-- **💰 Cost-Free**: No per-query charges or usage limits
-- **🔒 Privacy-First**: Your data never leaves your environment
-- **🌐 Offline Capable**: Works without internet connection (after initial model download)
+- 🔐 No API Keys Required: No OpenAI or other external API dependencies
+- 🏠 Fully Local: AI models run entirely on your machine
+- 💰 Cost-Free: No per-query charges or usage limits
+- 🔒 Privacy-First: Your data never leaves your environment
+- 🌐 Offline Capable: Works without internet connection (after initial model download)
 
 ## ✨ New Features
 
 ### 🤖 Local AI Integration (No API Keys Required!)
-- **Enhanced Natural Language Understanding**: Advanced AI-powered query processing using local models
-- **Intelligent Response Generation**: Context-aware responses that provide actionable insights
-- **Smart Recommendations**: AI-generated follow-up questions and suggestions
-- **Conversational Interface**: Natural language queries with intelligent parsing
-- **Privacy-First**: All AI processing runs locally on your machine
-- **Cost-Free**: No external API dependencies or usage charges
+- Enhanced Natural Language Understanding: Advanced AI-powered query processing using local models
+- Intelligent Response Generation: Context-aware responses that provide actionable insights
+- Smart Recommendations: AI-generated follow-up questions and suggestions
+- Conversational Interface: Natural language queries with intelligent parsing
+- Privacy-First: All AI processing runs locally on your machine
+- Cost-Free: No external API dependencies or usage charges
 
 ### 📊 Interactive Dashboard & Visualizations
-- **Real-time Quality Score Gauge**: Visual representation of overall data quality
-- **Interactive Charts**: Dynamic charts for issues by type, specialties, and states
-- **License Expiration Timeline**: Trend analysis of license expirations
-- **Duplicate Analysis Visualizations**: Advanced duplicate detection insights
-- **State-wise Analysis**: Geographic distribution of data quality issues
-- **Specialty-based Insights**: Medical specialty performance analytics
+- Real-time Quality Score Gauge: Visual representation of overall data quality
+- Interactive Charts: Dynamic charts for issues by type, specialties, and states
+- License Expiration Timeline: Trend analysis of license expirations
+- Duplicate Analysis Visualizations: Advanced duplicate detection insights
+- State-wise Analysis: Geographic distribution of data quality issues
+- Specialty-based Insights: Medical specialty performance analytics
 
-### 🎯 Enhanced User Experience
-- **Modern UI Design**: Clean, professional interface with intuitive navigation
-- **Tabbed Dashboard**: Organized views for different types of analysis
-- **One-click Sample Data**: Quick data loading for immediate testing
-- **Export Capabilities**: Download results in CSV format
-- **Responsive Design**: Works seamlessly across different screen sizes
+### 🏁 Enhanced User Experience
+- Modern UI Design: Clean, professional interface with intuitive navigation
+- Tabbed Dashboard: Organized views for different types of analysis
+- One-click Sample Data: Quick data loading for immediate testing
+- Export Capabilities: Download results in CSV format
+- Responsive Design: Works seamlessly across different screen sizes
 
 ## 🏗️ Architecture
 
 ### Core Components
-- **Data Quality Engine** (`src/engine.py`): Core analytics and validation engine
-- **Visualization Module** (`src/visualizations.py`): Interactive charts and graphs
-- **Gen-AI Processor** (`src/genai.py`): AI-powered natural language processing
-- **Enhanced Dashboard** (`ui/dashboard.py`): Modern Streamlit-based interface
+- Data Quality Engine (`src/engine.py`): Core analytics and validation engine
+- Visualization Module (`src/visualizations.py`): Interactive charts and graphs
+- Gen-AI Processor (`src/genai.py`): AI-powered natural language processing
+- Enhanced Dashboard (`ui/dashboard.py`): Modern Streamlit-based interface
 
 ### Data Processing Pipeline
-1. **Data Ingestion**: Load provider data, license databases, and NPI registry
-2. **Standardization**: Clean and normalize data formats
-3. **Validation**: Apply business rules and cross-reference external data
-4. **Quality Scoring**: Calculate composite data quality metrics
-5. **AI Analysis**: Process natural language queries with AI
-6. **Visualization**: Generate interactive charts and dashboards
+1. Data Ingestion: Load provider data, license databases, and NPI registry
+2. Standardization: Clean and normalize data formats
+3. Validation: Apply business rules and cross-reference external data
+4. Quality Scoring: Calculate composite data quality metrics
+5. AI Analysis: Process natural language queries with AI
+6. Visualization: Generate interactive charts and dashboards
 
 ### AI Model Pipeline
-1. **Rule-based Processing**: Fast pattern matching for common queries
-2. **Semantic Enhancement**: AI models improve intent detection for complex queries
-3. **Response Generation**: Context-aware responses with healthcare domain knowledge
-4. **Fallback System**: Always provides meaningful results
+1. Rule-based Processing: Fast pattern matching for common queries
+2. Semantic Enhancement: AI models improve intent detection for complex queries
+3. Response Generation: Context-aware responses with healthcare domain knowledge
+4. Fallback System: Always provides meaningful results
+
+### Models Used (Defaults)
+- Sentence Embeddings: sentence-transformers/all-MiniLM-L6-v2 — semantic similarity and intent matching
+  - Model: https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+- Text Generation (optional): microsoft/DialoGPT-small — intelligent response generation
+  - Model: https://huggingface.co/microsoft/DialoGPT-small
+- Fallback: Template-based responses if the generation model isn’t available
+- Where configured: See src/genai.py (_initialize_local_models) and LOCAL_AI_README.md
+- Customize: Change models via “Model Customization” in this README
 
 ## 🚀 Quick Start
 
@@ -155,21 +164,21 @@ You can customize which models to use by modifying `src/genai.py`:
 
 ### Data Sources
 The platform supports multiple data inputs:
-- **Provider Roster**: Main provider database
-- **License Databases**: State-specific license validation (NY, CA)
-- **NPI Registry**: National Provider Identifier validation
+- Provider Roster: Main provider database
+- License Databases: State-specific license validation (NY, CA)
+- NPI Registry: National Provider Identifier validation
 
 ## 📊 Performance
 
 ### Resource Usage
-- **RAM**: ~500MB for loaded models
-- **Storage**: ~100MB for cached models
-- **CPU**: Optimized for inference, works on standard hardware
+- RAM: ~500MB for loaded models
+- Storage: ~100MB for cached models
+- CPU: Optimized for inference, works on standard hardware
 
 ### Speed
-- **Cold Start**: 2-3 seconds (first query with model loading)
-- **Warm Queries**: <100ms response time
-- **Rule-based Fallback**: <10ms response time
+- Cold Start: 2-3 seconds (first query with model loading)
+- Warm Queries: <100ms response time
+- Rule-based Fallback: <10ms response time
 
 ## 🏥 Use Cases
 
@@ -193,12 +202,12 @@ The platform supports multiple data inputs:
 
 ## 🔧 Technical Stack
 
-- **Backend**: Python, Pandas, DuckDB
-- **Frontend**: Streamlit with custom CSS
-- **Visualizations**: Plotly, Altair
-- **AI/ML**: Local sentence transformers and text generation models
-- **Data Processing**: Pandas, NumPy
-- **APIs**: FastAPI (available separately)
+- Backend: Python, Pandas, DuckDB
+- Frontend: Streamlit with custom CSS
+- Visualizations: Plotly, Altair
+- AI/ML: Local sentence transformers and text generation models
+- Data Processing: Pandas, NumPy
+- APIs: FastAPI (available separately)
 
 ## 📱 API Access
 
@@ -229,7 +238,7 @@ The local AI approach scales horizontally:
 - No API rate limits or quotas
 - Consistent performance regardless of usage volume
 
-## 🔄 Migration from API-based Approach
+## 🆙 Migration from API-based Approach
 
 ### What Changed
 - ✅ Removed `openai` dependency
@@ -293,10 +302,10 @@ For issues and questions:
 ## 🎉 Benefits Summary
 
 This local AI approach provides:
-- **Enhanced user experience** with intelligent query understanding
-- **Zero external dependencies** for core AI functionality
-- **Cost-effective** solution with no ongoing API charges
-- **Privacy-preserving** with all processing done locally
-- **Production-ready** with robust fallback mechanisms
+- Enhanced user experience with intelligent query understanding
+- Zero external dependencies for core AI functionality
+- Cost-effective solution with no ongoing API charges
+- Privacy-preserving with all processing done locally
+- Production-ready with robust fallback mechanisms
 
 Perfect for healthcare organizations that require on-premises solutions while still benefiting from advanced AI capabilities!
