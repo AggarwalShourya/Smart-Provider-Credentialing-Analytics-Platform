@@ -47,6 +47,16 @@ INTENT_PATTERNS: Dict[str, List[Pattern]] = {
         re.compile(r"\bproviders?\b.*\brequiring\b.*\b(update|credential)", re.I),
         re.compile(r"\bcredential\b.*\bupdate", re.I),
     ],
+    "search_provider_by_name": [
+        re.compile(r"\bis\s+(their|there|they)\s*(anyone|anybody|somebody|someone)\s+.*\b([a-zA-Z]+\s+[a-zA-Z]+)\b.*\bname", re.I),
+        re.compile(r"\bfind\b.*\bprovider\b.*\bnamed?\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)", re.I),
+        re.compile(r"\bsearch\b.*\bfor\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)", re.I),
+        re.compile(r"\blook\s+for\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)", re.I),
+        re.compile(r"\bdo\s+we\s+have\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)", re.I),
+        re.compile(r"\bshow\s+me\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)", re.I),
+        re.compile(r"^([a-zA-Z]+\s+[a-zA-Z]+)\s+in\s+(the\s+)?(dataset|data)", re.I),
+        re.compile(r"\b([a-zA-Z]+\s+[a-zA-Z]+)\b.*\bin\s+(the\s+)?(dataset|data)", re.I),
+    ],
 }
 
 def extract_params(intent: str, text: str):
@@ -56,4 +66,29 @@ def extract_params(intent: str, text: str):
         if m:
             return {"days": int(m.group(1))}
         return {"days": 90}
+    elif intent == "search_provider_by_name":
+        # Extract name patterns from various query formats
+        patterns = [
+            r"\bis\s+(?:their|there|they)\s*(?:anyone|anybody|somebody|someone)\s+.*\b([a-zA-Z]+\s+[a-zA-Z]+)\b.*\bname",
+            r"\bfind\b.*\bprovider\b.*\bnamed?\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)",
+            r"\bsearch\b.*\bfor\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)",
+            r"\blook\s+for\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)",
+            r"\bdo\s+we\s+have\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)",
+            r"\bshow\s+me\b.*\b([a-zA-Z]+\s+[a-zA-Z]+)",
+            r"^([a-zA-Z]+\s+[a-zA-Z]+)\s+in\s+(?:the\s+)?(?:dataset|data)",
+            r"\b([a-zA-Z]+\s+[a-zA-Z]+)\b.*\bin\s+(?:the\s+)?(?:dataset|data)",
+        ]
+        
+        for pattern in patterns:
+            m = re.search(pattern, text, re.I)
+            if m:
+                name = m.group(1).strip()
+                return {"name": name}
+        
+        # Fallback: try to extract any two consecutive words that could be a name
+        m = re.search(r"\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b", text)
+        if m:
+            return {"name": m.group(1)}
+        
+        return {"name": ""}
     return {}
