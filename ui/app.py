@@ -10,7 +10,12 @@ import pandas as pd
 from src.engine import ProviderDQEngine
 from src.nlu import parse_intent
 
-st.set_page_config(page_title="Provider Data Quality Chatbot", layout="wide")
+# Only set page config if it hasn't been set already (to avoid conflicts with dashboard.py)
+try:
+    st.set_page_config(page_title="Provider Data Quality Chatbot", layout="wide")
+except st.errors.StreamlitAPIException:
+    # Page config has already been set, skip
+    pass
 st.title("Provider Data Quality Analytics & Chatbot")
 
 if "engine" not in st.session_state:
