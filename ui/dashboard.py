@@ -309,25 +309,6 @@ else:
     st.markdown("---")
     st.subheader("🤖 Local AI-Powered Query Interface")
     
-    # Example questions
-    with st.expander("💡 Example Questions", expanded=False):
-        example_questions = [
-            "How many providers have expired licenses in our network?",
-            "Show me all providers with phone number formatting issues",
-            "Which providers are missing NPI numbers?",
-            "Find potential duplicate provider records",
-            "What is our overall provider data quality score?",
-            "Show me a summary of all data quality problems by state",
-            "Generate a compliance report for expired licenses",
-            "Filter providers by license expiration date (next 60 days)",
-            "Show providers practicing in multiple states with single licenses",
-            "Export a list of providers requiring credential updates"
-        ]
-        
-        for i, question in enumerate(example_questions):
-            if st.button(f"💭 {question}", key=f"example_{i}"):
-                st.session_state.current_query = question
-
     # Chat input
     col1, col2 = st.columns([4, 1])
     
