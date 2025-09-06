@@ -15,20 +15,6 @@ def clean_phone(s: pd.Series, region="US") -> pd.Series:
             return None
     return s.apply(_fmt)
 
-def phone_national(s: pd.Series, region="US") -> pd.Series:
-    """Return numbers formatted in US national style e.g., (424) 396-2139 if valid, else None."""
-    def _fmt(x):
-        if pd.isna(x) or str(x).strip()=="":
-            return None
-        try:
-            num = phonenumbers.parse(str(x), region)
-            if phonenumbers.is_valid_number(num):
-                return phonenumbers.format_number(num, phonenumbers.PhoneNumberFormat.NATIONAL)
-            return None
-        except Exception:
-            return None
-    return s.apply(_fmt)
-
 def clean_email(s: pd.Series) -> pd.Series:
     return s.astype(str).str.strip().str.lower().where(lambda x: x.str.contains(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", regex=True), None)
 
@@ -52,7 +38,6 @@ def standardize_frame(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     if "phone" in out.columns:
         out["phone_clean"] = clean_phone(out["phone"])
-    out["phone_national"] = phone_national(out["phone"])
     if "email" in out.columns:
         out["email_clean"] = clean_email(out["email"])
     if "full_name" in out.columns:
