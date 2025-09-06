@@ -36,8 +36,8 @@ def ensure_dates(s: pd.Series) -> pd.Series:
 
 def standardize_frame(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
-    if "phone" in out.columns:
-        out["phone_clean"] = clean_phone(out["phone"])
+    if "practice_phone" in out.columns:
+        out["phone_clean"] = clean_phone(out["practice_phone"])
     if "email" in out.columns:
         out["email_clean"] = clean_email(out["email"])
     if "full_name" in out.columns:
