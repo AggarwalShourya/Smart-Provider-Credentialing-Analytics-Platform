@@ -10,14 +10,14 @@ COLUMN_SYNONYMS: Dict[str, List[str]] = {
     "npi": ["npi", "npi_number", "provider_npi"],
     "license_number": ["license_number", "lic_no", "license", "provider_license_number"],
     "license_state": ["license_state", "state_license", "lic_state", "issuing_state"],
-    "license_expiration_date": ["license_expiration_date", "expiration_date", "expiry", "exp_date"],
+    "license_expiration_date": ["license_expiration_date", "license_expiration", "expiration_date", "expiry", "exp_date"],
     "specialty": ["specialty", "primary_specialty", "taxonomy"],
-    "phone": ["phone", "phone_number", "telephone", "contact_phone"],
+    "phone": ["phone", "phone_number", "telephone", "contact_phone", "practice_phone"],
     "email": ["email", "email_address"],
     "address_line1": ["address_line1", "address1", "street", "practice_address_line1"],
     "address_city": ["address_city", "city", "practice_city"],
     "address_state": ["address_state", "state", "practice_state"],
-    "address_zip": ["address_zip", "zip", "zipcode", "postal_code"],
+    "address_zip": ["address_zip", "zip", "zipcode", "postal_code", "practice_zip"],
 }
 
 DATE_COLUMNS = ["license_expiration_date"]
