@@ -332,8 +332,11 @@ else:
                 # Execute query
                 result = st.session_state.engine.run_query(intent, params)
                 
-                # Generate intelligent response
-                ai_response = generate_response(intent, result, query)
+                # Get data context for enhanced LLM responses
+                data_context = st.session_state.engine.get_data_context_for_query(intent, result, params)
+                
+                # Generate intelligent response with data context
+                ai_response = generate_response(intent, result, query, data_context)
                 
                 # Display results
                 st.markdown('<div class="chat-message">', unsafe_allow_html=True)
