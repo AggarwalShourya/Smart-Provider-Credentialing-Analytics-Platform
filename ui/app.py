@@ -8,7 +8,7 @@ if ROOT_DIR not in sys.path:
 import streamlit as st
 import pandas as pd
 from src.engine import ProviderDQEngine
-from src.nlu import parse_intent
+from src.nlu import parse_intent, get_last_nlu_info
 
 st.set_page_config(page_title="Provider Data Quality Chatbot", layout="wide")
 st.title("Provider Data Quality Analytics & Chatbot")
@@ -88,6 +88,10 @@ if run_clicked and query:
     else:
         intent, params = parse_intent(query)
         # st.write(f"Intent: {intent}  Params: {params}")
+        # Lightweight NLU diagnostics
+        with st.expander("NLU diagnostics", expanded=False):
+            info = get_last_nlu_info()
+            st.json(info)
         res = st.session_state.engine.run_query(intent, params)
         if isinstance(res, pd.DataFrame):
             st.dataframe(res, use_container_width=True)

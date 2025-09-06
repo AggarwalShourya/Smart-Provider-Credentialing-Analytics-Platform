@@ -1,8 +1,17 @@
 import pandas as pd
+import re
 
 def rule_phone_format(df: pd.DataFrame) -> pd.Series:
-    # Valid if phone_clean is not null; otherwise flagged
-    return df["phone_clean"].isna()
+    """Flag phone numbers whose RAW value is not exactly "(XXX) XXX-XXXX".
+    Also flags missing raw phone. If you also want to validate number legitimacy,
+    combine with phone_clean.isna() elsewhere.
+    """
+    pattern = re.compile(r"^\(\d{3}\) \d{3}-\d{4}$")
+    raw = df.get("phone", pd.Series([None]*len(df), index=df.index))
+    raw_str = raw.astype(str).str.strip()
+    missing = ~raw_str.astype(bool)
+    bad_format = ~raw_str.str.match(pattern)
+    return missing | bad_format
 
 def rule_missing_npi(df: pd.DataFrame) -> pd.Series:
     return df["npi"].isna()
