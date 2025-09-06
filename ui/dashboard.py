@@ -21,14 +21,18 @@ from src.visualizations import (
 )
 
 # Page configuration
-st.set_page_config(
-    page_title="Smart Provider Credentialing Analytics Platform", 
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'About': "Smart Provider Credentialing Analytics Platform with AI-powered insights"
-    }
-)
+try:
+    st.set_page_config(
+        page_title="Smart Provider Credentialing Analytics Platform", 
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items={
+            'About': "Smart Provider Credentialing Analytics Platform with AI-powered insights"
+        }
+    )
+except st.errors.StreamlitAPIException:
+    # Page config has already been set, skip
+    pass
 
 # Custom CSS for better styling
 st.markdown("""
