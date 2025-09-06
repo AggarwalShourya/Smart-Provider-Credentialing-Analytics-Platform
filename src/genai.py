@@ -1,50 +1,114 @@
 """
 Gen-AI module for enhanced natural language processing and intelligent responses
+Uses local LLM models via Hugging Face transformers - no API keys required!
 """
 import os
 from typing import Dict, Any, Tuple, Optional
-from dotenv import load_dotenv
 import pandas as pd
-import streamlit as st
+import re
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
-# Load environment variables
-load_dotenv()
-
-# Try to import OpenAI, but make it optional
+# Try to import streamlit, but make it optional for testing
 try:
-    import openai
-    OPENAI_AVAILABLE = True
+    import streamlit as st
 except ImportError:
-    OPENAI_AVAILABLE = False
-    openai = None
+    # Mock streamlit for testing environments
+    class MockStreamlit:
+        def warning(self, msg): print(f"WARNING: {msg}")
+        def info(self, msg): print(f"INFO: {msg}")
+        def spinner(self, msg): 
+            class MockSpinner:
+                def __enter__(self): return self
+                def __exit__(self, *args): pass
+            return MockSpinner()
+    st = MockStreamlit()
+
+# Try to import transformers for local LLM, but make it optional
+try:
+    from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
 
 from .intents import INTENT_PATTERNS, extract_params
 
 
 class GenAIProcessor:
-    """Enhanced NLU processor with Gen-AI capabilities"""
+    """Enhanced NLU processor with local LLM capabilities - no API keys needed!"""
     
     def __init__(self):
-        self.openai_available = OPENAI_AVAILABLE
-        self.client = None
+        self.transformers_available = TRANSFORMERS_AVAILABLE
+        self.sentence_model = None
+        self.text_generator = None
+        self.intent_embeddings = None
         
-        # Initialize OpenAI client if available and API key is provided
-        if self.openai_available:
-            api_key = os.getenv('OPENAI_API_KEY')
-            if api_key:
+        # Initialize local models if transformers is available
+        if self.transformers_available:
+            self._initialize_local_models()
+    
+    def _initialize_local_models(self):
+        """Initialize local AI models for intent classification and text generation"""
+        try:
+            # Load sentence transformer for semantic similarity
+            with st.spinner("Loading AI models (first time may take a few minutes)..."):
+                self.sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
+                
+                # Prepare intent embeddings for semantic matching
+                self._prepare_intent_embeddings()
+                
+                # Try to load a small text generation model
                 try:
-                    self.client = openai.OpenAI(api_key=api_key)
+                    self.text_generator = pipeline(
+                        "text-generation",
+                        model="microsoft/DialoGPT-small",
+                        tokenizer="microsoft/DialoGPT-small",
+                        max_length=150,
+                        do_sample=True,
+                        temperature=0.7
+                    )
                 except Exception as e:
-                    st.warning(f"OpenAI initialization failed: {e}")
-                    self.client = None
+                    st.info("Advanced text generation not available, using template-based responses")
+                    self.text_generator = None
+                    
+        except Exception as e:
+            st.warning(f"Local AI models not available: {e}. Using rule-based processing.")
+            self.sentence_model = None
+            self.text_generator = None
+    
+    def _prepare_intent_embeddings(self):
+        """Prepare embeddings for all available intents for semantic matching"""
+        if not self.sentence_model:
+            return
+            
+        intent_descriptions = {
+            "expired_license_count": "count expired licenses providers healthcare",
+            "phone_format_issues": "phone number format formatting issues problems",
+            "missing_npi": "missing NPI number identifier provider",
+            "duplicate_records": "duplicate providers records same person",
+            "overall_quality_score": "overall quality score data assessment rating",
+            "specialties_with_most_issues": "medical specialties most data quality issues problems",
+            "state_issue_summary": "state summary issues problems by location geography",
+            "compliance_report_expired": "compliance report expired licenses regulatory",
+            "filter_by_expiration_window": "filter providers expiring soon within days",
+            "multi_state_single_license": "providers multiple states single license",
+            "export_update_list": "export list providers needing updates"
+        }
+        
+        # Generate embeddings for intent descriptions
+        descriptions = list(intent_descriptions.values())
+        self.intent_embeddings = {
+            intent: embedding for intent, embedding in 
+            zip(intent_descriptions.keys(), self.sentence_model.encode(descriptions))
+        }
     
     def parse_intent_with_ai(self, text: str) -> Tuple[str, Dict]:
-        """Parse intent using AI if available, fallback to rule-based"""
+        """Parse intent using local AI if available, fallback to rule-based"""
         # First try rule-based approach
         intent, params = self._rule_based_intent_parsing(text)
         
-        # If OpenAI is available and we have a fallback intent, try to enhance it
-        if self.client and intent == "overall_quality_score":  # This is our fallback
+        # If we have local AI models and we got a fallback intent, try to enhance it
+        if self.sentence_model and intent == "overall_quality_score":  # This is our fallback
             try:
                 enhanced_intent, enhanced_params = self._ai_intent_parsing(text)
                 if enhanced_intent and enhanced_intent != "overall_quality_score":
@@ -76,58 +140,40 @@ class GenAIProcessor:
         return "overall_quality_score", {}
     
     def _ai_intent_parsing(self, text: str) -> Tuple[str, Dict]:
-        """AI-enhanced intent parsing using OpenAI"""
-        if not self.client:
+        """AI-enhanced intent parsing using local sentence transformers"""
+        if not self.sentence_model or not self.intent_embeddings:
             return None, {}
         
-        available_intents = list(INTENT_PATTERNS.keys())
-        
-        prompt = f"""
-You are an expert in healthcare data quality analysis. Given a user query, identify the most appropriate intent from the following options:
-
-Available intents:
-- expired_license_count: Count expired licenses
-- phone_format_issues: Find phone formatting problems  
-- missing_npi: Find providers missing NPI numbers
-- duplicate_records: Find duplicate provider records
-- overall_quality_score: Get overall data quality score
-- specialties_with_most_issues: Find specialties with most data quality issues
-- state_issue_summary: Get summary of issues by state
-- compliance_report_expired: Generate compliance report for expired licenses
-- filter_by_expiration_window: Filter providers by license expiration within X days
-- multi_state_single_license: Find providers in multiple states with single license
-- export_update_list: Export list of providers needing updates
-
-User query: "{text}"
-
-Respond with ONLY the intent name that best matches the query. If no intent matches well, respond with "overall_quality_score".
-"""
-        
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=50,
-                temperature=0.1
-            )
+            # Get embedding for the user query
+            query_embedding = self.sentence_model.encode([text])[0]
             
-            predicted_intent = response.choices[0].message.content.strip()
+            # Calculate similarities with all intent embeddings
+            similarities = {}
+            for intent, intent_embedding in self.intent_embeddings.items():
+                similarity = np.dot(query_embedding, intent_embedding) / (
+                    np.linalg.norm(query_embedding) * np.linalg.norm(intent_embedding)
+                )
+                similarities[intent] = similarity
             
-            # Validate the predicted intent
-            if predicted_intent in available_intents:
-                # Extract parameters if needed
-                params = extract_params(predicted_intent, text)
-                return predicted_intent, params
+            # Get the best matching intent
+            best_intent = max(similarities, key=similarities.get)
+            best_score = similarities[best_intent]
+            
+            # Only use AI prediction if confidence is high enough
+            if best_score > 0.5:  # Threshold for semantic similarity
+                params = extract_params(best_intent, text)
+                return best_intent, params
             
         except Exception as e:
-            st.warning(f"AI intent parsing error: {e}")
+            st.warning(f"Local AI intent parsing error: {e}")
         
         return None, {}
     
     def generate_intelligent_response(self, intent: str, result: Any, query: str) -> str:
-        """Generate intelligent natural language response using AI"""
-        if not self.client:
-            return self._generate_simple_response(intent, result)
+        """Generate intelligent natural language response using local AI"""
+        if not self.text_generator:
+            return self._generate_enhanced_response(intent, result, query)
         
         try:
             # Prepare context about the result
@@ -135,43 +181,96 @@ Respond with ONLY the intent name that best matches the query. If no intent matc
                 if result.empty:
                     result_context = "No data found"
                 else:
-                    result_context = f"Found {len(result)} records. Columns: {', '.join(result.columns[:5])}{'...' if len(result.columns) > 5 else ''}"
+                    result_context = f"Found {len(result)} records"
             elif isinstance(result, (int, float)):
                 result_context = f"Result: {result}"
             else:
-                result_context = f"Result: {str(result)[:200]}"
+                result_context = f"Result: {str(result)[:100]}"
             
-            prompt = f"""
-You are a healthcare data quality expert assistant. A user asked: "{query}"
-
-The system identified this as intent: {intent}
-The query result: {result_context}
-
-Generate a helpful, professional response that:
-1. Directly answers the user's question
-2. Provides context about what the data means
-3. Suggests potential next steps or related insights
-4. Keeps response under 150 words
-5. Uses healthcare terminology appropriately
-
-Response:
-"""
+            # Create a simple prompt for local model
+            prompt = f"User asked: {query}. Result: {result_context}. Response:"
             
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=200,
-                temperature=0.7
-            )
+            # Generate response with local model
+            response = self.text_generator(prompt, max_length=100, num_return_sequences=1)
+            generated_text = response[0]['generated_text']
             
-            return response.choices[0].message.content.strip()
+            # Extract just the response part
+            if "Response:" in generated_text:
+                response_text = generated_text.split("Response:")[-1].strip()
+                if response_text and len(response_text) > 10:
+                    return response_text
             
         except Exception as e:
-            st.warning(f"AI response generation failed: {e}")
-            return self._generate_simple_response(intent, result)
+            st.warning(f"Local AI response generation failed: {e}")
+        
+        return self._generate_enhanced_response(intent, result, query)
+    
+    def _generate_enhanced_response(self, intent: str, result: Any, query: str) -> str:
+        """Generate enhanced rule-based response with context awareness"""
+        # Enhanced responses with more context and insights
+        if isinstance(result, pd.DataFrame):
+            record_count = len(result) if not result.empty else 0
+        elif isinstance(result, (int, float)):
+            record_count = result
+        else:
+            record_count = 0
+        
+        responses = {
+            "expired_license_count": self._format_expired_response(record_count),
+            "phone_format_issues": self._format_phone_response(record_count),
+            "missing_npi": self._format_npi_response(record_count),
+            "duplicate_records": self._format_duplicate_response(record_count),
+            "overall_quality_score": self._format_quality_response(result),
+            "specialties_with_most_issues": "📊 Analysis complete! Here are the medical specialties with the most data quality issues. Consider focusing quality improvement efforts on these areas.",
+            "state_issue_summary": "🌍 Geographic analysis shows data quality patterns by state. This helps identify regional compliance trends and target improvement efforts.",
+            "compliance_report_expired": f"📋 Compliance report generated! {record_count} providers require immediate attention for license renewal to maintain regulatory compliance.",
+            "filter_by_expiration_window": f"⏰ Found {record_count} providers with licenses expiring soon. Proactive renewal management is crucial for uninterrupted care delivery.",
+            "multi_state_single_license": f"🏥 Identified {record_count} providers practicing across state lines with single licenses. This may indicate compliance risks requiring review.",
+            "export_update_list": f"📤 Export ready! Generated actionable list of {record_count} providers requiring credential updates for your quality improvement team."
+        }
+        
+        return responses.get(intent, f"✅ Analysis complete! Found {record_count} relevant records for your query.")
+    
+    def _format_expired_response(self, count: int) -> str:
+        if count == 0:
+            return "🎉 Excellent! No providers found with expired licenses. Your credentialing team is maintaining strong compliance!"
+        elif count < 10:
+            return f"⚠️ Found {count} providers with expired licenses. This is manageable - recommend immediate outreach for renewal."
+        else:
+            return f"🚨 Critical: {count} providers have expired licenses! This represents a significant compliance risk requiring urgent action."
+    
+    def _format_phone_response(self, count: int) -> str:
+        if count == 0:
+            return "✅ All provider phone numbers are properly formatted! Your data quality is excellent in this area."
+        else:
+            return f"📞 Found {count} providers with phone formatting issues. Consider implementing automated phone number validation to improve data quality."
+    
+    def _format_npi_response(self, count: int) -> str:
+        if count == 0:
+            return "✅ All providers have valid NPI numbers! This is crucial for billing and compliance."
+        else:
+            return f"🆔 {count} providers are missing NPI numbers. This is a critical compliance issue that must be resolved for proper billing and identification."
+    
+    def _format_duplicate_response(self, count: int) -> str:
+        if count == 0:
+            return "✅ No duplicate records detected! Your provider database maintains excellent data integrity."
+        else:
+            return f"👥 Found {count} potential duplicate records. Recommend reviewing these for data consolidation to improve accuracy."
+    
+    def _format_quality_response(self, score) -> str:
+        try:
+            score_val = float(score)
+            if score_val >= 90:
+                return f"🌟 Outstanding! Overall data quality score is {score_val:.1f}%. Your credentialing data meets the highest standards."
+            elif score_val >= 70:
+                return f"👍 Good data quality at {score_val:.1f}%. Some areas for improvement identified - focus on highest-impact issues first."
+            else:
+                return f"⚠️ Data quality score is {score_val:.1f}%. Significant improvement needed - recommend systematic data cleansing initiative."
+        except:
+            return f"📊 Overall data quality score: {score}%. Use the detailed analysis tabs to identify specific improvement opportunities."
     
     def _generate_simple_response(self, intent: str, result: Any) -> str:
-        """Generate simple rule-based response"""
+        """Generate simple rule-based response (fallback)"""
         responses = {
             "expired_license_count": f"Found {result} providers with expired licenses.",
             "phone_format_issues": f"Found {len(result) if hasattr(result, '__len__') else result} providers with phone formatting issues.",
@@ -210,6 +309,16 @@ Response:
                 "Show me a breakdown of issues by type",
                 "Which specialties have the most data quality issues?",
                 "What are the main data quality problems?"
+            ],
+            "duplicate_records": [
+                "Export the duplicate records for manual review",
+                "Which specialties have the most duplicates?",
+                "Show me the overall data quality score"
+            ],
+            "specialties_with_most_issues": [
+                "What specific issues affect these specialties?",
+                "Generate a compliance report",
+                "Show the overall quality score trend"
             ]
         }
         

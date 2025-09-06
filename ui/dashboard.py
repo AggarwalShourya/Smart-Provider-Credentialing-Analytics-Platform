@@ -81,7 +81,7 @@ def save_temp(uploaded):
 
 # Header
 st.markdown('<h1 class="main-header">🏥 Smart Provider Credentialing Analytics Platform</h1>', unsafe_allow_html=True)
-st.markdown("### AI-Powered Data Quality Analytics with Interactive Dashboards")
+st.markdown("### Local AI-Powered Data Quality Analytics with Interactive Dashboards")
 
 # Sidebar for data loading
 with st.sidebar:
@@ -131,15 +131,20 @@ with st.sidebar:
             st.success("✅ Custom data loaded successfully!")
             st.rerun()
 
-    # API Configuration
+    # AI Configuration
     st.markdown("---")
-    st.subheader("🤖 AI Configuration")
-    st.info("💡 Set OPENAI_API_KEY environment variable to enable AI features")
+    st.subheader("🤖 Local AI Features")
+    st.info("💡 This platform uses local AI models - no API keys required!")
     
-    if os.getenv('OPENAI_API_KEY'):
-        st.success("✅ AI features enabled")
-    else:
-        st.warning("⚠️ AI features disabled (no API key)")
+    # Check if transformers is available
+    try:
+        import transformers
+        import sentence_transformers
+        st.success("✅ Local AI models available - enhanced natural language processing enabled")
+        st.caption("🔹 Semantic query understanding\n🔹 Intelligent response generation\n🔹 No external API dependencies")
+    except ImportError:
+        st.warning("⚠️ Local AI models not installed. Install 'transformers' and 'sentence-transformers' for enhanced features.")
+        st.caption("The platform will work with basic rule-based processing.")
 
 # Main content area
 if not st.session_state.loaded:
@@ -157,10 +162,11 @@ if not st.session_state.loaded:
     
     with col2:
         st.markdown("""
-        ### 🤖 AI-Powered Insights
-        - Natural language queries
+        ### 🤖 Local AI-Powered Insights
+        - Natural language queries (no API keys!)
         - Intelligent response generation
         - Smart recommendations
+        - Local semantic understanding
         """)
     
     with col3:
@@ -297,7 +303,7 @@ else:
 
     # AI-Powered Chat Interface
     st.markdown("---")
-    st.subheader("🤖 AI-Powered Query Interface")
+    st.subheader("🤖 Local AI-Powered Query Interface")
     
     # Example questions
     with st.expander("💡 Example Questions", expanded=False):

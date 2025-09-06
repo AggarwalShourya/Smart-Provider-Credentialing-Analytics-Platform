@@ -1,16 +1,18 @@
 # Smart Provider Credentialing Analytics Platform
 
-## 🚀 Enhanced with AI-Powered Insights and Interactive Dashboards
+## 🚀 Enhanced with Local AI-Powered Insights and Interactive Dashboards
 
-A comprehensive healthcare data quality analytics platform that combines advanced data validation, AI-powered natural language processing, and interactive visualizations to help healthcare organizations maintain high-quality provider credentialing data.
+A comprehensive healthcare data quality analytics platform that combines advanced data validation, local AI-powered natural language processing, and interactive visualizations to help healthcare organizations maintain high-quality provider credentialing data.
 
 ## ✨ New Features
 
-### 🤖 Gen-AI Integration
-- **Enhanced Natural Language Understanding**: Advanced AI-powered query processing using OpenAI
+### 🤖 Local AI Integration (No API Keys Required!)
+- **Enhanced Natural Language Understanding**: Advanced AI-powered query processing using local models
 - **Intelligent Response Generation**: Context-aware responses that provide actionable insights
 - **Smart Recommendations**: AI-generated follow-up questions and suggestions
 - **Conversational Interface**: Natural language queries with intelligent parsing
+- **Privacy-First**: All AI processing runs locally on your machine
+- **Cost-Free**: No external API dependencies or usage charges
 
 ### 📊 Interactive Dashboard & Visualizations
 - **Real-time Quality Score Gauge**: Visual representation of overall data quality
