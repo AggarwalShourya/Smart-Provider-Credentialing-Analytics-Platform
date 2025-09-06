@@ -7,6 +7,7 @@ from .entity_resolution import find_duplicates
 from .validation import validate_licenses, validate_npi
 from .quality_rules import rule_phone_format, summarize_by_state, rule_multi_state_single_license
 from .scoring import compute_scores, overall_score
+from .data_context import DataContextBuilder
 
 class ProviderDQEngine:
     def __init__(self):
@@ -16,6 +17,7 @@ class ProviderDQEngine:
         self.npi = None
         self.aug = None         # augmented with validations and rules
         self.dup_pairs = None   # duplicate pair table
+        self.data_context_builder = None  # For generating data context
 
     def load_files(self, roster_path: str, ny_path: str=None, ca_path: str=None, npi_path: str=None):
         self.roster = load_and_normalize(roster_path)
@@ -23,6 +25,8 @@ class ProviderDQEngine:
         self.ca = load_and_normalize(ca_path) if ca_path else None
         self.npi = load_and_normalize(npi_path) if npi_path else None
         self._build_index()
+        # Initialize data context builder after data is loaded
+        self.data_context_builder = DataContextBuilder(self)
 
     def _build_index(self):
         df = self.roster.copy()
@@ -151,3 +155,9 @@ class ProviderDQEngine:
         if fn is None:
             raise ValueError(f"Unknown intent: {intent}")
         return fn()
+    
+    def get_data_context_for_query(self, intent: str, result: Any, params: Dict[str, Any] = None):
+        """Get rich data context for LLM to generate intelligent responses"""
+        if self.data_context_builder is None:
+            return None
+        return self.data_context_builder.build_context_for_query(intent, result, params)

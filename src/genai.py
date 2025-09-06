@@ -3,7 +3,7 @@ Gen-AI module for enhanced natural language processing and intelligent responses
 Uses local LLM models via Hugging Face transformers - no API keys required!
 """
 import os
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, List
 import pandas as pd
 import re
 import numpy as np
@@ -39,6 +39,7 @@ except ImportError:
     TRANSFORMERS_AVAILABLE = False
 
 from .intents import INTENT_PATTERNS, extract_params
+from .data_context import DataContext
 
 
 class GenAIProcessor:
@@ -178,8 +179,12 @@ class GenAIProcessor:
         
         return None, {}
     
-    def generate_intelligent_response(self, intent: str, result: Any, query: str) -> str:
-        """Generate intelligent natural language response using local AI"""
+    def generate_intelligent_response(self, intent: str, result: Any, query: str, data_context: Optional[DataContext] = None) -> str:
+        """Generate intelligent natural language response using local AI and data context"""
+        # Use data-aware response generation if context is available
+        if data_context:
+            return self._generate_data_aware_response(intent, result, query, data_context)
+        
         if not self.text_generator:
             return self._generate_enhanced_response(intent, result, query)
         
@@ -212,6 +217,128 @@ class GenAIProcessor:
             st.warning(f"Local AI response generation failed: {e}")
         
         return self._generate_enhanced_response(intent, result, query)
+    
+    def _generate_data_aware_response(self, intent: str, result: Any, query: str, data_context: DataContext) -> str:
+        """Generate intelligent responses using data context and patterns"""
+        # Base result information
+        if isinstance(result, pd.DataFrame):
+            record_count = len(result) if not result.empty else 0
+        elif isinstance(result, (int, float)):
+            record_count = result
+        else:
+            record_count = 0
+        
+        # Build context-aware response components
+        response_parts = []
+        
+        # 1. Main result with data context
+        main_result = self._format_main_result_with_context(intent, result, record_count, data_context)
+        response_parts.append(main_result)
+        
+        # 2. Data insights based on context
+        if data_context.key_findings:
+            insights = self._format_data_insights(data_context.key_findings)
+            response_parts.append(insights)
+        
+        # 3. Data sample reference (if relevant)
+        if data_context.data_sample is not None and not data_context.data_sample.empty:
+            sample_info = self._format_sample_reference(intent, data_context)
+            if sample_info:
+                response_parts.append(sample_info)
+        
+        # 4. Quality context
+        quality_info = self._format_quality_context(data_context)
+        if quality_info:
+            response_parts.append(quality_info)
+        
+        return " ".join(response_parts)
+    
+    def _format_main_result_with_context(self, intent: str, result: Any, record_count: int, data_context: DataContext) -> str:
+        """Format the main result with rich data context"""
+        total_providers = data_context.total_providers
+        
+        if intent == "expired_license_count":
+            percentage = (record_count / total_providers * 100) if total_providers > 0 else 0
+            return f"🚨 Analysis of {total_providers:,} providers shows {record_count:,} have expired licenses ({percentage:.1f}%)."
+        
+        elif intent == "phone_format_issues":
+            percentage = (record_count / total_providers * 100) if total_providers > 0 else 0
+            return f"📞 Found {record_count:,} providers with phone formatting issues out of {total_providers:,} total ({percentage:.1f}%)."
+        
+        elif intent == "missing_npi":
+            percentage = (record_count / total_providers * 100) if total_providers > 0 else 0
+            return f"🆔 Identified {record_count:,} providers missing NPI numbers from {total_providers:,} total providers ({percentage:.1f}%)."
+        
+        elif intent == "duplicate_records":
+            return f"🔍 Duplicate analysis of {total_providers:,} providers identified {record_count:,} potential duplicate pairs."
+        
+        elif intent == "overall_quality_score":
+            return f"📊 Overall data quality score: {record_count}% across {total_providers:,} providers."
+        
+        elif intent == "specialties_with_most_issues":
+            return f"📈 Quality analysis across medical specialties from {total_providers:,} provider records shows varying issue patterns."
+        
+        elif intent == "state_issue_summary":
+            return f"🌍 Geographic analysis of {total_providers:,} providers reveals state-specific data quality patterns."
+        
+        elif intent == "compliance_report_expired":
+            return f"📋 Compliance report generated: {record_count:,} providers require immediate license renewal attention."
+        
+        elif intent == "filter_by_expiration_window":
+            return f"⏰ Expiration window analysis: {record_count:,} providers have licenses expiring soon from {total_providers:,} total."
+        
+        elif intent == "multi_state_single_license":
+            return f"🏥 Multi-state analysis: {record_count:,} providers practice across state lines with single licenses."
+        
+        elif intent == "export_update_list":
+            return f"📤 Update list generated: {record_count:,} providers require credential updates from {total_providers:,} total."
+        
+        # Default format
+        percentage = (record_count / total_providers * 100) if total_providers > 0 else 0
+        return f"✅ Analysis of {total_providers:,} providers completed: {record_count:,} records match your criteria ({percentage:.1f}%)."
+    
+    def _format_data_insights(self, key_findings: List[str]) -> str:
+        """Format key findings into readable insights"""
+        if not key_findings:
+            return ""
+        
+        insights = "💡 Key insights: " + "; ".join(key_findings[:2])  # Limit to top 2 insights
+        return insights + "."
+    
+    def _format_sample_reference(self, intent: str, data_context: DataContext) -> str:
+        """Reference the actual data when appropriate"""
+        if data_context.data_sample is None or data_context.data_sample.empty:
+            return ""
+        
+        sample_size = len(data_context.data_sample)
+        
+        # Only reference samples for certain intents where it adds value
+        if intent in ["expired_license_count", "missing_npi", "phone_format_issues"]:
+            if "specialty" in data_context.data_sample.columns:
+                specialties = data_context.data_sample["specialty"].value_counts()
+                if not specialties.empty:
+                    top_specialty = specialties.index[0]
+                    return f"🔍 Sample data shows issues affecting specialties including {top_specialty}."
+        
+        return ""
+    
+    def _format_quality_context(self, data_context: DataContext) -> str:
+        """Add overall quality context when relevant"""
+        quality_score = data_context.overall_quality_score
+        
+        if quality_score > 0:
+            if quality_score >= 85:
+                quality_status = "excellent"
+            elif quality_score >= 75:
+                quality_status = "good"
+            elif quality_score >= 60:
+                quality_status = "fair"
+            else:
+                quality_status = "needs improvement"
+            
+            return f"📈 Overall data quality: {quality_score}% ({quality_status})."
+        
+        return ""
     
     def _generate_enhanced_response(self, intent: str, result: Any, query: str) -> str:
         """Generate enhanced rule-based response with context awareness"""
@@ -346,9 +473,9 @@ def parse_intent(text: str) -> Tuple[str, Dict]:
     return genai_processor.parse_intent_with_ai(text)
 
 
-def generate_response(intent: str, result: Any, query: str) -> str:
+def generate_response(intent: str, result: Any, query: str, data_context: Optional[DataContext] = None) -> str:
     """Generate intelligent response"""
-    return genai_processor.generate_intelligent_response(intent, result, query)
+    return genai_processor.generate_intelligent_response(intent, result, query, data_context)
 
 
 def get_follow_up_suggestions(intent: str, result: Any) -> list:
