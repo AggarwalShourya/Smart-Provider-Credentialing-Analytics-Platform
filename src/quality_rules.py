@@ -1,8 +1,40 @@
 import pandas as pd
 
 def rule_phone_format(df: pd.DataFrame) -> pd.Series:
-    # Valid if phone_clean is not null; otherwise flagged
-    return df["phone_clean"].isna()
+    """
+    Flag phone numbers with formatting issues.
+    This includes:
+    1. Numbers that couldn't be cleaned (phone_clean is null)
+    2. Numbers with non-standard formatting (missing parentheses, spaces, etc.)
+    """
+    if "phone" not in df.columns:
+        return pd.Series(False, index=df.index)
+    
+    # Start with numbers that couldn't be cleaned
+    issues = df["phone_clean"].isna()
+    
+    # Also flag numbers with non-standard formatting patterns
+    phone_series = df["phone"].fillna("").astype(str)
+    
+    # Flag phones that don't match standard US patterns but were still cleanable
+    # Standard patterns: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXXXXXXXXX
+    import re
+    standard_patterns = [
+        r'^\(\d{3}\)\s*\d{3}[-\s]?\d{4}$',  # (XXX) XXX-XXXX
+        r'^\d{3}[-\s]\d{3}[-\s]\d{4}$',     # XXX-XXX-XXXX or XXX XXX XXXX
+        r'^\d{10}$'                          # XXXXXXXXXX
+    ]
+    
+    def has_standard_format(phone_str):
+        if not phone_str or phone_str.strip() == "":
+            return False
+        phone_str = phone_str.strip()
+        return any(re.match(pattern, phone_str) for pattern in standard_patterns)
+    
+    # Flag phones that don't match standard patterns (but might still be cleanable)
+    non_standard = ~phone_series.apply(has_standard_format) & phone_series.str.strip().astype(bool)
+    
+    return issues | non_standard
 
 def rule_missing_npi(df: pd.DataFrame) -> pd.Series:
     return df["npi"].isna()

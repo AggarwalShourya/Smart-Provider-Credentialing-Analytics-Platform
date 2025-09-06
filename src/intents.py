@@ -37,9 +37,15 @@ INTENT_PATTERNS: Dict[str, List[Pattern]] = {
     ],
     "multi_state_single_license": [
         re.compile(r"\bmultiple states\b.*single license\b", re.I),
+        re.compile(r"\bpracticing\b.*\bmultiple states\b", re.I),
+        re.compile(r"\bproviders?\b.*\bmultiple states\b.*\bsingle license", re.I),
+        re.compile(r"\bsingle license\b.*\bmultiple states\b", re.I),
     ],
     "export_update_list": [
-        re.compile(r"\bexport\b.*(update|credential) ", re.I),
+        re.compile(r"\bexport\b.*(update|credential)", re.I),
+        re.compile(r"\blist\b.*\bproviders?\b.*\brequiring\b.*\b(update|credential)", re.I),
+        re.compile(r"\bproviders?\b.*\brequiring\b.*\b(update|credential)", re.I),
+        re.compile(r"\bcredential\b.*\bupdate", re.I),
     ],
 }
 
