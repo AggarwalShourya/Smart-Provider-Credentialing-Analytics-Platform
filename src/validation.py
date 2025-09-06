@@ -22,6 +22,10 @@ def validate_licenses(roster: pd.DataFrame, ny: pd.DataFrame, ca: pd.DataFrame) 
                     break
 
     state_db = pd.concat([ny_src, ca_src], ignore_index=True)
+    
+    # Remove duplicates by license_number to prevent row multiplication
+    # Keep the first occurrence of each license number
+    state_db = state_db.drop_duplicates(subset=["license_number"], keep="first")
 
     # Join by license_number where available
     joined = df.merge(
@@ -48,6 +52,7 @@ def validate_licenses(roster: pd.DataFrame, ny: pd.DataFrame, ca: pd.DataFrame) 
     # In case merge created only one column
     if "license_expiration_date_state" not in joined.columns and "license_expiration_date" in state_db.columns:
         # Avoid overriding roster date; compute state date by re-merge
+        # Use the deduplicated state_db to prevent row multiplication
         tmp = df[["license_number"]].merge(
             state_db[["license_number", "license_expiration_date"]],
             on="license_number", how="left"
