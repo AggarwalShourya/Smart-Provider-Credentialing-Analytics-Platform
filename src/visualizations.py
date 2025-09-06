@@ -102,6 +102,11 @@ def create_state_summary_chart(engine) -> go.Figure:
             fig.update_layout(title="Issues by State", height=400)
             return fig
         
+        # Calculate total issues per state
+        issue_cols = ['license_state_mismatch', 'license_expired', 'npi_missing', 'phone_issue', 'duplicate_suspect', 'multi_state_single_license']
+        available_cols = [col for col in issue_cols if col in state_data.columns]
+        state_data['total_issues'] = state_data[available_cols].sum(axis=1)
+        
         # Create a simple bar chart instead of map for simplicity
         fig = px.bar(state_data, x='address_state', y='total_issues',
                      title="Data Quality Issues by State",
