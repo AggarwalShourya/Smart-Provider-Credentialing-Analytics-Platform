@@ -8,7 +8,7 @@ if ROOT_DIR not in sys.path:
 import streamlit as st
 import pandas as pd
 from src.engine import ProviderDQEngine
-from src.nlu import parse_intent, get_last_nlu_info
+from src.nlu import parse_intent
 
 st.set_page_config(page_title="Provider Data Quality Chatbot", layout="wide")
 st.title("Provider Data Quality Analytics & Chatbot")
@@ -30,25 +30,25 @@ def save_temp(uploaded):
 with st.sidebar:
     st.header("Load Data")
 
-    # # Option A: Auto-load from local datasets folder
-    # st.subheader("Option A: Auto-load from datasets folder")
-    # default_dir = os.path.join(ROOT_DIR, "datasets", "Credentialing use case data")
-    # st.caption(f"Folder: {default_dir}")
-    # if st.button("Load from datasets folder"):
-    #     roster_path = os.path.join(default_dir, "provider_roster_with_errors.csv")
-    #     ny_path = os.path.join(default_dir, "ny_medical_license_database.csv")
-    #     ca_path = os.path.join(default_dir, "ca_medical_license_database.csv")
-    #     npi_path = os.path.join(default_dir, "mock_npi_registry.csv")
+    # Option A: Auto-load from local datasets folder
+    st.subheader("Option A: Auto-load from datasets folder")
+    default_dir = os.path.join(ROOT_DIR, "datasets", "Credentialing use case data")
+    st.caption(f"Folder: {default_dir}")
+    if st.button("Load from datasets folder"):
+        roster_path = os.path.join(default_dir, "provider_roster_with_errors.csv")
+        ny_path = os.path.join(default_dir, "ny_medical_license_database.csv")
+        ca_path = os.path.join(default_dir, "ca_medical_license_database.csv")
+        npi_path = os.path.join(default_dir, "mock_npi_registry.csv")
 
-    #     missing = [p for p in [roster_path, ny_path, ca_path, npi_path] if not os.path.exists(p)]
-    #     if missing:
-    #         st.error("Missing files:\n" + "\n".join(missing))
-    #     else:
-    #         st.session_state.engine.load_files(roster_path, ny_path, ca_path, npi_path)
-    #         st.session_state.loaded = True
-    #         st.success("Data loaded from datasets folder.")
+        missing = [p for p in [roster_path, ny_path, ca_path, npi_path] if not os.path.exists(p)]
+        if missing:
+            st.error("Missing files:\n" + "\n".join(missing))
+        else:
+            st.session_state.engine.load_files(roster_path, ny_path, ca_path, npi_path)
+            st.session_state.loaded = True
+            st.success("Data loaded from datasets folder.")
 
-    # st.markdown("---")
+    st.markdown("---")
 
     # Option B: Upload files manually
     st.subheader("Option B: Upload CSVs")
@@ -87,11 +87,7 @@ if run_clicked and query:
         st.error("Please load data first (sidebar).")
     else:
         intent, params = parse_intent(query)
-        # st.write(f"Intent: {intent}  Params: {params}")
-        # Lightweight NLU diagnostics
-        with st.expander("NLU diagnostics", expanded=False):
-            info = get_last_nlu_info()
-            st.json(info)
+        st.write(f"Intent: {intent}  Params: {params}")
         res = st.session_state.engine.run_query(intent, params)
         if isinstance(res, pd.DataFrame):
             st.dataframe(res, use_container_width=True)
