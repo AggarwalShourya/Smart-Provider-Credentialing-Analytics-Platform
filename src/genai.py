@@ -101,7 +101,8 @@ class GenAIProcessor:
             "compliance_report_expired": "compliance report expired licenses regulatory",
             "filter_by_expiration_window": "filter providers expiring soon within days",
             "multi_state_single_license": "providers multiple states single license",
-            "export_update_list": "export list providers needing updates"
+            "export_update_list": "export list providers needing updates",
+            "search_provider_by_name": "search find provider by name person individual"
         }
         
         # Generate embeddings for intent descriptions
@@ -417,7 +418,8 @@ class GenAIProcessor:
             "compliance_report_expired": "Generated compliance report for expired licenses.",
             "filter_by_expiration_window": f"Found {len(result) if hasattr(result, '__len__') else result} providers with licenses expiring soon.",
             "multi_state_single_license": f"Found {len(result) if hasattr(result, '__len__') else result} providers practicing in multiple states with single licenses.",
-            "export_update_list": f"Generated list of {len(result) if hasattr(result, '__len__') else result} providers requiring credential updates."
+            "export_update_list": f"Generated list of {len(result) if hasattr(result, '__len__') else result} providers requiring credential updates.",
+            "search_provider_by_name": f"Found {len(result) if hasattr(result, '__len__') else 0} provider(s) matching the search criteria." if hasattr(result, '__len__') else "Provider search completed."
         }
         
         return responses.get(intent, "Query completed successfully.")
@@ -454,6 +456,11 @@ class GenAIProcessor:
                 "What specific issues affect these specialties?",
                 "Generate a compliance report",
                 "Show the overall quality score trend"
+            ],
+            "search_provider_by_name": [
+                "Show me this provider's data quality issues",
+                "What is this provider's license status?",
+                "Are there any duplicates for this provider?"
             ]
         }
         
