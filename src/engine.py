@@ -7,6 +7,7 @@ from .entity_resolution import find_duplicates
 from .validation import validate_licenses, validate_npi
 from .quality_rules import rule_phone_format, summarize_by_state, rule_multi_state_single_license
 from .scoring import compute_scores, overall_score
+from .data_context import DataContextBuilder
 
 class ProviderDQEngine:
     def __init__(self):
@@ -16,6 +17,7 @@ class ProviderDQEngine:
         self.npi = None
         self.aug = None         # augmented with validations and rules
         self.dup_pairs = None   # duplicate pair table
+        self.data_context_builder = None  # For generating data context
 
     def load_files(self, roster_path: str, ny_path: str=None, ca_path: str=None, npi_path: str=None):
         self.roster = load_and_normalize(roster_path)
@@ -23,6 +25,8 @@ class ProviderDQEngine:
         self.ca = load_and_normalize(ca_path) if ca_path else None
         self.npi = load_and_normalize(npi_path) if npi_path else None
         self._build_index()
+        # Initialize data context builder after data is loaded
+        self.data_context_builder = DataContextBuilder(self)
 
     def _build_index(self):
         df = self.roster.copy()
@@ -132,6 +136,39 @@ class ProviderDQEngine:
         keep = [c for c in ["full_name","npi","license_number","address_state","email_clean","phone_clean","specialty"] if c in self.aug.columns]
         return self.aug[mask][keep].copy()
 
+    def search_provider_by_name(self, name: str) -> pd.DataFrame:
+        """Search for providers by name (fuzzy matching)"""
+        if not name or self.aug is None:
+            return pd.DataFrame()
+        
+        name = name.strip().lower()
+        
+        # Search in full_name column if available
+        if "full_name" in self.aug.columns:
+            mask = self.aug["full_name"].str.lower().str.contains(name, na=False, regex=False)
+            if mask.any():
+                cols = [c for c in ["full_name", "npi", "primary_specialty", "practice_city", "practice_state", "license_number", "license_state", "practice_phone"] if c in self.aug.columns]
+                return self.aug[mask][cols].copy()
+        
+        # Alternative search in first_name and last_name if full_name not available or no match
+        if "first_name" in self.aug.columns and "last_name" in self.aug.columns:
+            name_parts = name.split()
+            if len(name_parts) >= 2:
+                first_name = name_parts[0]
+                last_name = name_parts[-1]
+                
+                mask = (
+                    self.aug["first_name"].str.lower().str.contains(first_name, na=False, regex=False) &
+                    self.aug["last_name"].str.lower().str.contains(last_name, na=False, regex=False)
+                )
+                
+                if mask.any():
+                    cols = [c for c in ["first_name", "last_name", "npi", "primary_specialty", "practice_city", "practice_state", "license_number", "license_state", "practice_phone"] if c in self.aug.columns]
+                    return self.aug[mask][cols].copy()
+        
+        # Return empty DataFrame if no matches found
+        return pd.DataFrame()
+
     # Dispatcher from intents
     def run_query(self, intent: str, params: Dict[str, Any]) -> Any:
         mapping = {
@@ -146,8 +183,15 @@ class ProviderDQEngine:
             "filter_by_expiration_window": lambda: self.filter_by_expiration_window(params.get("days", 90)),
             "multi_state_single_license": self.multi_state_single_license,
             "export_update_list": self.export_update_list,
+            "search_provider_by_name": lambda: self.search_provider_by_name(params.get("name", "")),
         }
         fn = mapping.get(intent)
         if fn is None:
             raise ValueError(f"Unknown intent: {intent}")
         return fn()
+    
+    def get_data_context_for_query(self, intent: str, result: Any, params: Dict[str, Any] = None):
+        """Get rich data context for LLM to generate intelligent responses"""
+        if self.data_context_builder is None:
+            return None
+        return self.data_context_builder.build_context_for_query(intent, result, params)
