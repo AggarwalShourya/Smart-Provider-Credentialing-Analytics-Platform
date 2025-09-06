@@ -6,8 +6,15 @@ import os
 from typing import Dict, Any, Tuple, Optional
 import pandas as pd
 import re
-from sentence_transformers import SentenceTransformer
 import numpy as np
+
+# Try to import sentence_transformers, but make it optional for compatibility
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    SentenceTransformer = None
 
 # Try to import streamlit, but make it optional for testing
 try:
@@ -39,12 +46,13 @@ class GenAIProcessor:
     
     def __init__(self):
         self.transformers_available = TRANSFORMERS_AVAILABLE
+        self.sentence_transformers_available = SENTENCE_TRANSFORMERS_AVAILABLE
         self.sentence_model = None
         self.text_generator = None
         self.intent_embeddings = None
         
-        # Initialize local models if transformers is available
-        if self.transformers_available:
+        # Initialize local models if both transformers and sentence_transformers are available
+        if self.transformers_available and self.sentence_transformers_available:
             self._initialize_local_models()
     
     def _initialize_local_models(self):
